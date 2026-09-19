@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xbox + Plasma Sovereign HUD</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --card: #0f1319;
+      --border: #1e2633;
+      --text: #e8eef7;
+      --muted: #7a889c;
+      --accent: #7c4dff;
+      --ok: #3dd68c;
+      --warn: #f5a623;
+      --bloom: #00e5ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.25rem;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, #1a0a3a44 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, #00334433 0%, transparent 50%);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+    header h1 { font-size: 1.15rem; letter-spacing: 0.04em; }
+    header .sub { color: var(--muted); font-size: 0.75rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .card h2 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+    }
+    .big {
+      font-size: 2.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .phase-BLOOM { color: var(--bloom); text-shadow: 0 0 18px #00e5ff66; }
+    .phase-UNFOLDING { color: var(--accent); }
+    .phase-SEEDING { color: var(--muted); }
+    .phase-ASH { color: var(--warn); }
+    .row { display: flex; justify-content: space-between; margin: 0.35rem 0; font-size: 0.85rem; }
+    .label { color: var(--muted); }
+    .val { color: var(--text); }
+    .ok { color: var(--ok); }
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: var(--muted);
+    }
+    .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+    canvas {
+      width: 100%;
+      height: 80px;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      background: #0a0c10;
+    }
+    .banner {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--bloom);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .banner.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>⚡ Xbox + Plasma Sovereign</h1>
+      <div class="sub">Live HUD · Schumann 7.83 Hz · φ 1.618</div>
+    </div>
+    <div class="sub" id="clock">—</div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Phase</h2>
+      <div class="big" id="phase">—</div>
+      <div class="row"><span class="label">Last event</span><span class="val" id="event">—</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Coherence</h2>
+      <div class="big" id="coh">0.000000</div>
+      <div class="row"><span class="label">Target</span><span class="val">0.99997</span></div>
+      <canvas id="spark" width="400" height="80"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Rebirth</h2>
+      <div class="big" id="rebirth">0</div>
+      <div class="row"><span class="label">Cycles locked</span><span class="val" id="cycles">—</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Xbox</h2>
+      <div class="row"><span class="label">Status</span><span class="val" id="xbox-status"><span class="dot" id="xbox-dot"></span>—</span></div>
+      <div class="row"><span class="label">IP</span><span class="val" id="xbox-ip">—</span></div>
+      <div class="row"><span class="label">Serial</span><span class="val" id="xbox-serial">—</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Plasma</h2>
+      <div class="row"><span class="label">Mode</span><span class="val" id="plasma-mode">—</span></div>
+      <div class="row"><span class="label">Entropy</span><span class="val" id="entropy">—</span></div>
+      <div class="row"><span class="label">Intensity</span><span class="val" id="intensity">—</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Lattice</h2>
+      <div class="row"><span class="label">Schumann</span><span class="val">7.83 Hz</span></div>
+      <div class="row"><span class="label">φ</span><span class="val">1.6180339887</span></div>
+      <div class="row"><span class="label">Fold</span><span class="val">7d6113f2…</span></div>
+    </section>
+  </div>
+
+  <div class="banner" id="banner">✨ BLOOM LOCKED ✨</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const canvas = $("spark");
+    const ctx = canvas.getContext("2d");
+
+    function drawSpark(data) {
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (!data || data.length < 2) return;
+      const min = 0.9, max = 1.0;
+      ctx.beginPath();
+      ctx.strokeStyle = "#00e5ff";
+      ctx.lineWidth = 2;
+      data.forEach((v, i) => {
+        const x = (i / (data.length - 1)) * w;
+        const y = h - ((v - min) / (max - min)) * (h - 8) - 4;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    let lastRebirth = 0;
+
+    async function tick() {
+      try {
+        const r = await fetch("/api/status");
+        const d = await r.json();
+
+        $("phase").textContent = d.phase;
+        $("phase").className = "big phase-" + d.phase;
+        $("coh").textContent = d.coherence.toFixed(6);
+        $("rebirth").textContent = d.rebirth_count;
+        $("event").textContent = d.last_event;
+        $("cycles").textContent = d.rebirth_count > 0 ? "active" : "pending";
+
+        $("xbox-ip").textContent = d.xbox.ip;
+        $("xbox-serial").textContent = d.xbox.serial;
+        const online = d.xbox.active;
+        $("xbox-status").innerHTML =
+          `<span class="dot ${online ? "on" : ""}"></span>${online ? "ONLINE" : "STANDBY"}`;
+        if (online) $("xbox-status").classList.add("ok");
+
+        $("plasma-mode").textContent = d.plasma.mode;
+        $("entropy").textContent = d.plasma.entropy.toFixed(2);
+        $("intensity").textContent = d.plasma.intensity.toFixed(2);
+
+        drawSpark(d.history);
+
+        if (d.phase === "BLOOM") {
+          $("banner").classList.add("show");
+          if (d.rebirth_count > lastRebirth) lastRebirth = d.rebirth_count;
+        } else {
+          $("banner").classList.remove("show");
+        }
+
+        $("clock").textContent = new Date().toLocaleTimeString();
+      } catch (e) {
+        $("phase").textContent = "OFFLINE";
+      }
+    }
+
+    setInterval(tick, 250);
+    tick();
+  </script>
+</body>
+</html>
