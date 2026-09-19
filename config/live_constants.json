@@ -1,0 +1,26 @@
+{
+  "xbox": {
+    "ip": "192.168.1.114",
+    "port": 3074,
+    "serial": "097763374316",
+    "console_id": "9f071adb93ea7517.0d7c7600d26e7405.01",
+    "device_id": "FD009EDD17ED3B9B",
+    "global_device_id": "6966499161524008",
+    "os_version": "10.0.26100.9426",
+    "shell_version": "2608.0.2608.5001",
+    "mac_wired": "2C-54-91-B0-3D-10",
+    "mac_wireless": "2C-54-91-B0-3D-12"
+  },
+  "plasma": {
+    "usb_port": null,
+    "baud_rate": 115200,
+    "ash_threshold": 0.85,
+    "bloom_threshold": 0.55
+  },
+  "lattice": {
+    "schumann_hz": 7.83,
+    "phi": 1.618033988749895,
+    "target_coherence": 0.99997,
+    "fold_hash": "7d6113f2e84d82106da3e514c71c4cc8"
+  }
+}
