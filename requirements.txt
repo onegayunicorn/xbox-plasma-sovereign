@@ -1,0 +1,3 @@
+# Core (stdlib only for the sandbox runner)
+# Optional for real plasma USB:
+pyserial>=3.5
