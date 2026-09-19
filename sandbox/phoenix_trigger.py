@@ -1,4 +1,4 @@
-"""Phoenix Trigger — phase machine driven by Schumann pulse + plasma entropy."""
+"""Phoenix Trigger v2.7 — Schumann-driven phase machine with reliable BLOOM."""
 import time
 import math
 import json
@@ -28,27 +28,48 @@ class PhoenixTrigger:
         self.bloom_thresh = cfg["plasma"]["bloom_threshold"]
         self.state = PhoenixState("SEEDING", 0.95, 0, "INIT", True)
         self.entropy_window: list[float] = []
+        self._last_rebirth_t = 0.0
 
     def update(self, plasma: PlasmaReading, contrib: float) -> PhoenixState:
         self.entropy_window.append(plasma.entropy)
-        if len(self.entropy_window) > 15:
+        if len(self.entropy_window) > 12:
             self.entropy_window.pop(0)
 
         avg_e = sum(self.entropy_window) / len(self.entropy_window)
-        pulse = math.sin(time.time() * self.schumann * 0.01)
+        pulse = math.sin(time.time() * self.schumann * 0.02)
+        now = time.time()
 
-        if avg_e >= self.ash_thresh and self.state.phase != "ASH":
-            self.state.phase = "ASH"
-            self.state.coherence = max(0.5, self.state.coherence - 0.12)
-            self.state.last_event = f"ASH entropy={avg_e:.2f}"
-        elif avg_e <= self.bloom_thresh and self.state.coherence < self.target:
-            rise = 0.0015 * (1 - avg_e) * (1 + pulse * 0.5) + contrib
-            self.state.coherence = min(1.0, self.state.coherence + rise)
-            if self.state.coherence >= self.target:
+        # --- ASH: high entropy dips coherence ---
+        if avg_e >= self.ash_thresh:
+            if self.state.phase != "ASH":
+                self.state.phase = "ASH"
+                self.state.last_event = f"ASH entropy={avg_e:.2f}"
+            self.state.coherence = max(0.55, self.state.coherence - 0.008)
+            return self.state
+
+        # --- Rising path ---
+        base = 0.0045 * (1.0 - avg_e * 0.7)
+        rise = base * (1.0 + pulse * 0.35) + contrib * 1.8
+        self.state.coherence = min(1.0, self.state.coherence + rise)
+
+        if self.state.coherence >= self.target:
+            if self.state.phase != "BLOOM":
                 self.state.phase = "BLOOM"
                 self.state.rebirth_count += 1
                 self.state.last_event = f"REBIRTH #{self.state.rebirth_count}"
-            elif self.state.phase == "ASH":
-                self.state.phase = "UNFOLDING"
+                self._last_rebirth_t = now
+            else:
+                # Hold at full coherence; allow a new rebirth only every ~8 s
+                if now - self._last_rebirth_t >= 8.0:
+                    self.state.rebirth_count += 1
+                    self.state.last_event = f"REBIRTH #{self.state.rebirth_count}"
+                    self._last_rebirth_t = now
+                    self.state.coherence = 0.9993  # soft cycle
+        elif self.state.phase == "ASH":
+            self.state.phase = "UNFOLDING"
+            self.state.last_event = "UNFOLDING from ASH"
+        elif self.state.phase == "SEEDING" and self.state.coherence > 0.97:
+            self.state.phase = "UNFOLDING"
+            self.state.last_event = "UNFOLDING"
 
         return self.state

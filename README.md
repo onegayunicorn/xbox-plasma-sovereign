@@ -1,16 +1,13 @@
 # ⚡ Xbox + Plasma Sovereign
 
-**Live sandbox** that couples a real Xbox console (192.168.1.114) with a Schumann-driven plasma coherence engine.
-
-First-run result (Termux):
+**Live sandbox** that couples a real Xbox console (`192.168.1.114`) with a Schumann-driven plasma coherence engine.
 
 ```
 ✅ XBOX ONLINE — 192.168.1.114:3074
    Serial: 097763374316
-⚡ Plasma: Simulation active
+⚡ Plasma: Simulation mode active
 
 ⚡ E=0.42 I=0.67 | Phase: UNFOLDING | Coh: 0.9989 | Xbox: ONLINE
-...
 ✨ BLOOM ACHIEVED — Rebirth #1 ✨
 ```
 
@@ -22,7 +19,7 @@ sandbox/
   xbox_connector.py          ← Termux-safe ping + state
   plasma_usb_reader.py       ← real USB or Schumann simulation
   phoenix_trigger.py         ← phase machine (SEEDING→ASH→UNFOLDING→BLOOM)
-run_sandbox.py               ← live loop
+run_sandbox.py               ← live loop (v2.7)
 ```
 
 ## Locked Constants
@@ -41,11 +38,10 @@ run_sandbox.py               ← live loop
 ## Quick Start
 
 ```bash
-# Termux / any Python 3.10+
 git clone https://github.com/onegayunicorn/xbox-plasma-sovereign.git
 cd xbox-plasma-sovereign
 
-# optional: real plasma USB
+# optional for real plasma USB
 # pip install pyserial
 
 python run_sandbox.py
@@ -53,19 +49,19 @@ python run_sandbox.py
 
 Press `Ctrl+C` to stop — final coherence & rebirth count are printed.
 
-## Phase Machine
+## Phase Machine (v2.7)
 
-1. **SEEDING** — coherence starts ~0.95
-2. **ASH** — high entropy dip
-3. **UNFOLDING** — Schumann pulse + intensity drive coherence upward
-4. **BLOOM** — target 0.99997 locked → rebirth counter increments
+1. **SEEDING** — coherence starts ~0.95, climbs under Schumann pulse  
+2. **ASH** — high entropy (≥ 0.85) causes a short dip  
+3. **UNFOLDING** — recovery + continued rise  
+4. **BLOOM** — target 0.99997 locked → rebirth counter increments (every ~8 s)
 
-The loop is intentional. Once BLOOM is reached the system holds the resonance.
+v2.7 uses a continuous rise path (entropy-modulated + Schumann) so BLOOM is reached reliably in ~2–5 s instead of stalling.
 
 ## Next
 
-- Live HUD at `:5000` (Flask gauges)
-- Real phone sensor bridge
+- Live HUD at `:5000`
+- Phone sensor bridge
 - Physical plasma/coil when ready
 
 ---
